@@ -1,0 +1,17 @@
+# vim: ts=2 sw=2 et ft=ansible.yaml
+---
+
+- name: validate whether we have composer installed
+  stat:
+    path: '/usr/local/bin/composer'
+  register:  composer_fstat
+
+- name: install composer
+  shell: |
+    curl -sS {{mvk_fireflyiii_composer_url}} \
+      | php -- \
+        --install-dir=/usr/local/bin \
+        --filename=composer
+    composer -v
+  when:
+  - not(composer_fstat.stat.exists)

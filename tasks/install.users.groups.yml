@@ -1,0 +1,26 @@
+# vim: ts=2 sw=2 et ft=ansible.yaml
+---
+
+- name: create groups for fireflyiii
+  group:
+    name:   '{{curr_group.name}}'
+    gid:    '{{curr_group.gid|default(omit)}}'
+    state:   present
+  with_items: '{{mvk_fireflyiii_groups|default([])|list}}'
+  when:
+  - mvk_fireflyiii_groups|default([])|length
+  loop_control:
+    loop_var: curr_group
+
+
+- name: create users for fireflyiii
+  user:
+    name:     '{{curr_user.name}}'
+    uid:      '{{curr_user.uid|default(omit)}}'
+    group:    '{{curr_user.group}}'
+    password: '{{curr_user.password}}'
+  with_items: '{{mvk_fireflyiii_users|default([])|list}}'
+  when:
+  - mvk_fireflyiii_users|default([])|length
+  loop_control:
+    loop_var: curr_user

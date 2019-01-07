@@ -1,0 +1,7 @@
+---
+- name: install os speciofic packages
+  include_tasks: 'install.packages.{{ansible_os_family}}.yml'
+  tags:
+  - install
+  - configure
+  

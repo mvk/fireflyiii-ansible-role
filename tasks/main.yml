@@ -1,0 +1,46 @@
+# vim: ts=2 sw=2 et ft=ansible.yaml
+---
+# tasks file for mvk.fireflyiii
+- name: assert we are on supported system
+  assert:
+    that: '{{condition}}'
+  with_items:
+  - (ansible_os_family in ["Debian"])
+  loop_control:
+    loop_var: condition
+  tags:
+  - mvk.fireflyiii
+  - install
+  - configure
+
+- name: install os packages
+  include_tasks: 'install.packages.yml'
+  tags:
+  - mvk.fireflyiii
+  - install
+
+- name: setup users/groups
+  include_tasks: 'install.users.groups.yml'
+  tags:
+  - mvk.fireflyiii
+  - install
+  - configure
+
+- name: securing
+  include_tasks: 'secure.server.yml'
+  tags:
+  - mvk.fireflyiii
+  - configure
+  
+- name: composer
+  include_tasks: 'install.composer.yml'
+  tags:
+  - mvk.fireflyiii
+  - install
+
+- name: Firefly III
+  include_tasks: 'install.fireflyiii.yml'
+  tags:
+  - mvk.fireflyiii
+  - install
+  - configure

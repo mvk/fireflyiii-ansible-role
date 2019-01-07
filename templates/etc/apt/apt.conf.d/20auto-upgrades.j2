@@ -1,0 +1,9 @@
+# vim: ft=jinja
+APT::Periodic::Update-Package-Lists "{{mvk_fireflyiii.unattended_upgrade.update_package_lists|default('0')}}";
+{% if mvk_fireflyiii.unattended_upgrade.update_package_lists|default("0") == "1" %}
+APT::Periodic::Download-Upgradeable-Packages "{{mvk_fireflyiii.unattended_upgrade.download_upgradeable_packages|default('0')}}";
+{% if 'auto_clean_interval' in mvk_fireflyiii.unattended_upgrade|default({}) %}
+APT::Periodic::AutocleanInterval "{{mvk_fireflyiii.unattended_upgrade.auto_clean_interval}}";
+{% endif %}
+{% endif %}
+APT::Periodic::Unattended-Upgrade "{{mvk_fireflyiii.unattended_upgrade.unattended_upgrade|default('0')}}";

@@ -1,0 +1,71 @@
+# vim: ts=2 sw=2 et ft=answible.yaml
+---
+# tasks file for mvk.fireflyiii
+
+- name: update variables to be OS specific
+  include_vars:
+    file: 'packages.{{ansible_os_family}}.yml'
+
+- name: update DB variables to be OS specific
+  include_vars:
+    file: 'packages.{{ansible_os_family}}.{{mvk_fireflyiii_db_type}}.yml'
+
+#- name: generate unattended-upgrades apt configuration script
+#  template:
+#    src: '{{fname}}.j2'
+#    dest: '/{{fname}}'
+#    backup: true
+#  with_items:
+#  - 'etc/apt/apt.conf.d/20auto-upgrades'
+#  loop_control:
+#    loop_var: fname
+
+- name: check whether we have already rerun reconfigure
+  stat:
+    path: /tmp/reconfigure_done
+  register: reconfigure_fstat
+
+- name: update and configure system packaging
+  shell: |
+    {{cmd}}
+  with_items:
+  - 'apt-get update'
+  - 'apt-get upgrade -y || /bin/true'
+  - 'apt-get autoremove -y --frontend=noninteractive || /bin/true'
+  loop_control:
+    loop_var: cmd
+  when:
+  - not(reconfigure_fstat.stat.exists|default(false))
+
+- name: update and configure system packaging
+  shell: |
+    dpkg-reconfigure --frontend=noninteractive tzdata && \
+    locale-gen {{mvk_fireflyiii_db_locale}} && \
+    dpkg-reconfigure --frontend=noninteractive locales && \
+    #echo "unattended-upgrades       unattended-upgrades/enable_auto_updates boolean true" \
+    #  | debconf-set-selections && \
+    #dpkg-reconfigure --frontend=noninteractive unattended-upgrades
+  when:
+  - False
+  - not(reconfigure_fstat.stat.exists|default(false))
+
+- name: touch file so we don not repeat
+  file:
+    path: /tmp/reconfigure_done
+    state: touch
+  when:
+  - not(reconfigure_fstat.stat.exists|default(false))
+
+- name: install required os packages
+  apt:
+    name:   '{{mvk_fireflyiii_packages|list}}'
+    state:  present
+  when:
+  - mvk_fireflyiii_packages|default([])|length
+
+- name: install required db packages
+  apt:
+    name:   '{{mvk_fireflyiii_db_packages|list}}'
+    state:  present
+  when:
+  - mvk_fireflyiii_db_packages|default([])|length

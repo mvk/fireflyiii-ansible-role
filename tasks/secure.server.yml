@@ -1,0 +1,6 @@
+# vim: ts=2 sw=2 et ft=ansible.yaml
+---
+
+- name: secure the server
+  debug:
+    msg: "securing tasks will come here"

@@ -1,0 +1,83 @@
+# vim: ts=2 sw=2 et ft=ansible.yaml
+---
+
+
+- name: setup automation_finished_path variable
+  set_fact:
+    project_dir:              '{{mvk_fireflyiii_install_root}}/{{mvk_fireflyiii_git_repo|basename}}'
+
+- name: setup automation_finished_path variable
+  set_fact:
+    automation_finished_path: '{{project_dir}}/automation_finished.txt'
+
+- name: 'remove old {{project_dir}} (overwrite={{overwrite}})'
+  stat:
+    path: '{{project_dir}}'
+    state: absent
+  when:
+  - mvk_fireflyiii_overwrite|default(false)
+
+
+- name: 'check directiry {{project_dir}} is present'
+  stat:
+    path: '{{project_dir}}'
+  register: project_dir_fstat
+
+
+- name: 'check file automation_finished_path is present'
+  stat:
+    path: '{{automation_finished_path}}'
+  register: automation_finished_fstat
+
+- name: install Firefly III with composer
+  shell: |
+    composer \
+      create-project {{mvk_fireflyiii_git_repo}} \
+      --no-dev \
+      --prefer-dist {{mvk_fireflyiii_git_repo|basename}} \
+      {{mvk_fireflyiii_version}}
+  args:
+    chdir: '{{mvk_fireflyiii_install_root}}'
+  when:
+  - not(project_dir_fstat.stat.exists)
+
+- name: generate api key
+  shell: |
+    php artisan key:generate
+  args:
+    chdir: '{{project_dir}}'
+  register: api_key_cmd
+  when: 
+  - not(automation_finished_fstat.stat.exists)
+
+- name: setup API key variable
+  set_fact:
+    # api_key: '{{ansible_date_time.iso8601_micro | to_uuid}}'
+    api_key: '{{api_key_cmd.stdout_lines[0].split(":")[1].split("]")[0]}}'
+  when: 
+  - not(automation_finished_fstat.stat.exists)
+
+- name: print api key
+  debug:
+    msg: '{{api_key}}'
+
+- name: configure Firefly III config env file
+  template:
+    src: '{{tpl}}.j2'
+    dest: '/{{tpl}}'
+  with_items:
+  - 'opt/{{mvk_fireflyiii_git_repo|basename}}/.env'
+  loop_control:
+    loop_var: tpl
+  when:
+  - not(automation_finished_fstat.stat.exists)
+
+- name: initialize the database
+  shell: |
+    php artisan migrate:refresh --seed
+    php artisan passport:install
+  args:
+    chdir: '{{project_dir}}'
+  when:
+  - not(automation_finished_fstat.stat.exists)
+

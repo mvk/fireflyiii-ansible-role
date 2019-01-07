@@ -1,0 +1,17 @@
+# vim: ts=2 sw=2 et ft=ansible.yaml
+---
+
+mvk_fireflyiii_packages:
+- nginx
+- php-fpm
+- php-curl
+- php-gd
+- php-bcmath
+- php-zip
+- php-intl
+- php-mbstring
+- php-xml
+
+mvk_fireflyiii_db_packages:
+- mysql-client
+- php7.2-mysql
