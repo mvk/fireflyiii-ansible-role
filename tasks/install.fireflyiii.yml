@@ -1,6 +1,16 @@
 # vim: ts=2 sw=2 et ft=ansible.yaml
 ---
 
+- name: calculate intall root dir
+  set_fact:
+    mvk_fireflyiii_install_root: '{{mvk_fireflyiii_users.0.home}}'
+
+- name: setup install root 
+  file:
+    path:   '{{mvk_fireflyiii_install_root}}'
+    owner:  '{{mvk_fireflyiii_users.0.name}}'
+    group:  '{{mvk_fireflyiii_users.0.group}}'
+    state:  directory
 
 - name: setup automation_finished_path variable
   set_fact:
@@ -10,19 +20,25 @@
   set_fact:
     automation_finished_path: '{{project_dir}}/automation_finished.txt'
 
-- name: 'remove old {{project_dir}} (overwrite={{overwrite}})'
-  stat:
-    path: '{{project_dir}}'
-    state: absent
+- name: 'remove old folders (mvk_fireflyiii_overwrite={{mvk_fireflyiii_overwrite}})'
+  file:
+    path:   '{{curr_dir}}'
+    state:  absent
+  with_items:
+  - '{{project_dir}}'
+  - '{{mvk_fireflyiii_users.0.home}}/.cache'
+  - '{{mvk_fireflyiii_users.0.home}}/.config'
+  - '{{mvk_fireflyiii_users.0.home}}/.composer'
+  - '{{mvk_fireflyiii_users.0.home}}/.local'
+  loop_control:
+    loop_var: curr_dir
   when:
   - mvk_fireflyiii_overwrite|default(false)
-
 
 - name: 'check directiry {{project_dir}} is present'
   stat:
     path: '{{project_dir}}'
   register: project_dir_fstat
-
 
 - name: 'check file automation_finished_path is present'
   stat:
@@ -30,6 +46,8 @@
   register: automation_finished_fstat
 
 - name: install Firefly III with composer
+  become: true
+  become_user: '{{mvk_fireflyiii_users.0.name}}'
   shell: |
     composer \
       create-project {{mvk_fireflyiii_git_repo}} \
@@ -40,8 +58,22 @@
     chdir: '{{mvk_fireflyiii_install_root}}'
   when:
   - not(project_dir_fstat.stat.exists)
+- name: configure Firefly III config env file
+  template:
+    src:    '{{tpl}}.j2'
+    dest:   '/{{tpl}}'
+    owner:  '{{mvk_fireflyiii_users.0.name}}'
+    group:  '{{mvk_fireflyiii_users.0.group}}'
+  with_items:
+  - '{{project_dir.split("/")[1:]|join("/")}}/.env'
+  loop_control:
+    loop_var: tpl
+  when:
+  - not(automation_finished_fstat.stat.exists)
 
-- name: generate api key
+- name: generate API key
+  become: true
+  become_user: '{{mvk_fireflyiii_users.0.name}}'
   shell: |
     php artisan key:generate
   args:
@@ -50,34 +82,20 @@
   when: 
   - not(automation_finished_fstat.stat.exists)
 
-- name: setup API key variable
-  set_fact:
-    # api_key: '{{ansible_date_time.iso8601_micro | to_uuid}}'
-    api_key: '{{api_key_cmd.stdout_lines[0].split(":")[1].split("]")[0]}}'
-  when: 
-  - not(automation_finished_fstat.stat.exists)
-
-- name: print api key
-  debug:
-    msg: '{{api_key}}'
-
-- name: configure Firefly III config env file
-  template:
-    src: '{{tpl}}.j2'
-    dest: '/{{tpl}}'
-  with_items:
-  - 'opt/{{mvk_fireflyiii_git_repo|basename}}/.env'
-  loop_control:
-    loop_var: tpl
-  when:
-  - not(automation_finished_fstat.stat.exists)
-
 - name: initialize the database
+  become: true
+  become_user: '{{mvk_fireflyiii_users.0.name}}'
   shell: |
-    php artisan migrate:refresh --seed
-    php artisan passport:install
+    php artisan "migrate:refresh" --seed
+    php artisan "passport:install"
   args:
     chdir: '{{project_dir}}'
   when:
   - not(automation_finished_fstat.stat.exists)
 
+- name: setup automation_finished file
+  file:
+    path:   '{{automation_finished_path}}'
+    owner:  '{{mvk_fireflyiii_users.0.name}}'
+    group:  '{{mvk_fireflyiii_users.0.group}}'
+    state:  touch

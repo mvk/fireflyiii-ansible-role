@@ -15,11 +15,13 @@
 
 - name: create users for fireflyiii
   user:
-    name:     '{{curr_user.name}}'
-    uid:      '{{curr_user.uid|default(omit)}}'
-    group:    '{{curr_user.group}}'
-    password: '{{curr_user.password}}'
-  with_items: '{{mvk_fireflyiii_users|default([])|list}}'
+    name:         '{{curr_user.name}}'
+    uid:          '{{curr_user.uid|default(omit)}}'
+    group:        '{{curr_user.group}}'
+    home:         '{{curr_user.home|default(omit)}}'
+    password:     '{{curr_user.password|password_hash("sha512", "SuperSalt")}}'
+    create_home:  '{% if curr_user.home|default("")|length %}true{% else %}false{% endif %}'
+  with_items:     '{{mvk_fireflyiii_users|default([])|list}}'
   when:
   - mvk_fireflyiii_users|default([])|length
   loop_control:

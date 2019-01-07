@@ -2,15 +2,17 @@
 ---
 # defaults file for mvk.fireflyiii
 
+mvk_fireflyiii_overwrite:         false
 mvk_fireflyiii_version:           '4.7.9'
-mvk_fireflyiii_install_root:      '/opt'
 mvk_fireflyiii_git_repo:          'grumpydictator/firefly-iii'
 mvk_fireflyiii_composer_url:      'https://getcomposer.org/installer'
+mvk_fireflyiii_config_app_url:    'http://{{app_fqdn}}'
+mvk_fireflyiii_config_tz:         'Asia/Jerusalem'
 mvk_fireflyiii_db_type:           'mariadb'
-mvk_fireflyiii_db_schema:         'fireflyiii'
+mvk_fireflyiii_db_schema:         '{{db_schema}}'
 mvk_fireflyiii_db_locale:         'en_US.UTF-8'
 mvk_fireflyiii_db_endpoint:       '{{db_endpoint|default("127.0.0.1")}}'
-mvk_fireflyiii_overwrite:         false
+
 mvk_fireflyiii_groups:
 - name:     '{{db_username}}'
   gid:      10000
@@ -19,6 +21,7 @@ mvk_fireflyiii_users:
   group:    '{{db_username}}'
   uid:      10000
   password: '{{db_password}}'
+  home:     '/opt/{{db_username}}'
 
 mvk_fireflyiii_site_admin:        'admin@gmail.com'
 

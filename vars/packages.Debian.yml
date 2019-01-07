@@ -3,6 +3,7 @@
 
 mvk_fireflyiii_packages:
 - nginx
+- unzip
 - php-fpm
 - php-curl
 - php-gd
@@ -11,6 +12,8 @@ mvk_fireflyiii_packages:
 - php-intl
 - php-mbstring
 - php-xml
+- php-ldap
+
 
 mvk_fireflyiii_db_packages:
 - mysql-client

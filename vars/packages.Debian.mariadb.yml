@@ -3,4 +3,3 @@
 mvk_fireflyiii_db_packages:
 - mariadb-client
 - php7.2-mysql
-- unzip
